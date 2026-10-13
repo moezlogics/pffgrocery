@@ -3,7 +3,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@medusajs/ui"
 import Input from "@modules/common/components/input"
-import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
@@ -165,22 +164,44 @@ const ShippingAddress = ({
     }
   }, [])
 
-  useEffect(() => {
-    if (cart && cart.shipping_address) {
-      setFormAddress(cart?.shipping_address, cart?.email)
-    }
+  // Keep the half-filled form alive across a promo/loyalty apply (which
+  // refetches the cart and used to CLOBBER this form via a `[cart]` effect)
+  // and across a round-trip to sign in (which unmounts this component).
+  // Persisted per cart id, so a fresh cart after an order never restores
+  // stale typing.
+  const storageKey = cart?.id ? `checkout_shipping_${cart.id}` : null
 
-    if (cart && !cart.email && customer?.email) {
-      setFormAddress(undefined, customer.email)
-    }
-  }, [cart])
+  // Restore once on mount — the shopper's typing wins over the (usually
+  // empty, not-yet-saved) server cart address.
+  useEffect(() => {
+    if (!storageKey) return
+    try {
+      const saved = sessionStorage.getItem(storageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === "object") {
+          setFormData((prev) => ({ ...prev, ...parsed }))
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey])
+
+  // Persist on every change.
+  useEffect(() => {
+    if (!storageKey) return
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(formData))
+    } catch {}
+  }, [storageKey, formData])
 
   // Handle full name change — split into first/last for API compatibility
   const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fullName = e.target.value
-    const parts = fullName.trim().split(/\s+/)
+    const parts = fullName.trim().split(/\s+/).filter(Boolean)
     const firstName = parts[0] || ""
-    const lastName = parts.slice(1).join(" ") || ""
+    // Never send an empty last_name — Medusa address validation rejects it
+    const lastName = parts.slice(1).join(" ") || firstName
     
     setFormData({
       ...formData,
@@ -211,8 +232,11 @@ const ShippingAddress = ({
           <AddressSelect
             addresses={customer.addresses}
             addressInput={
-              mapKeys(formData, (_, key) =>
-                key.replace("shipping_address.", "")
+              Object.fromEntries(
+                Object.entries(formData).map(([key, v]) => [
+                  key.replace("shipping_address.", ""),
+                  v,
+                ])
               ) as HttpTypes.StoreCartAddress
             }
             onSelect={setFormAddress}
@@ -238,6 +262,11 @@ const ShippingAddress = ({
       <input type="hidden" name="shipping_address.first_name" value={formData["shipping_address.first_name"]} />
       <input type="hidden" name="shipping_address.last_name" value={formData["shipping_address.last_name"]} />
       <input type="hidden" name="shipping_address.company" value="" />
+      <input
+        type="hidden"
+        name="shipping_address.postal_code"
+        value={formData["shipping_address.postal_code"] || "00000"}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         {/* Full Name — single field instead of first/last */}
@@ -253,14 +282,13 @@ const ShippingAddress = ({
           />
         </div>
         <Input
-          label="Email"
+          label="Email (optional)"
           name="email"
           type="email"
           title="Enter a valid email address."
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
-          required
           data-testid="shipping-email-input"
         />
         <Input
@@ -306,6 +334,7 @@ const ShippingAddress = ({
             label="State / Province"
             name="shipping_address.province"
             autoComplete="address-level1"
+            value={formData["shipping_address.province"] || ""}
             onChange={handleChange}
           />
         </div>
