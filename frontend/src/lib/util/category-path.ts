@@ -36,6 +36,55 @@ export function buildCategoryPath(
   return segments.join("/")
 }
 
+type FlatCategory = {
+  id: string
+  handle?: string | null
+  parent_category_id?: string | null
+  parent_category?: any | null
+}
+
+/**
+ * Canonical path using nested `parent_category` when present, otherwise
+ * reconstructing the chain from a flat category list via
+ * `parent_category_id`. Use this for carousel / sidebar links where
+ * children often lack nested parent objects (leaf-only handles → 404).
+ */
+export function buildCategoryPathFromList(
+  category: FlatCategory | null | undefined,
+  allCategories: FlatCategory[] = []
+): string {
+  if (!category?.handle) return ""
+
+  // Prefer nested relation when available.
+  if (category.parent_category) {
+    // The guard above narrows `category.handle` to a string, but that
+    // doesn't change FlatCategory's declared `handle?: string | null`,
+    // so passing the object straight through fails to type-check.
+    // Hand over an explicitly shaped value instead of casting.
+    return buildCategoryPath({
+      handle: category.handle,
+      parent_category: category.parent_category,
+    })
+  }
+
+  // No parent id → top-level.
+  if (!category.parent_category_id) {
+    return category.handle
+  }
+
+  const byId = new Map(allCategories.map((c) => [c.id, c]))
+  const segments: string[] = []
+  let cur: FlatCategory | undefined = category
+  let guard = 0
+  while (cur?.handle && guard++ < 16) {
+    segments.unshift(cur.handle)
+    const pid = cur.parent_category_id || cur.parent_category?.id || null
+    if (!pid) break
+    cur = byId.get(pid)
+  }
+  return segments.join("/")
+}
+
 /**
  * Traverses up the category chain from a leaf category to the root parent,
  * returning the ordered chain of categories.
@@ -50,4 +99,3 @@ export function buildCategoryChain(leaf: any): any[] {
   }
   return chain
 }
-

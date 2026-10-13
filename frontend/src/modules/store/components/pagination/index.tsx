@@ -5,10 +5,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 export function Pagination({
   page,
   totalPages,
+  onPageChange,
   "data-testid": dataTestid,
 }: {
   page: number
   totalPages: number
+  /**
+   * When provided, the parent owns paging (client-side, instant — no
+   * server round-trip). Falls back to a router navigation otherwise so
+   * the component stays usable anywhere.
+   */
+  onPageChange?: (page: number) => void
   "data-testid"?: string
 }) {
   const router = useRouter()
@@ -16,6 +23,11 @@ export function Pagination({
   const searchParams = useSearchParams()
 
   const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages || newPage === page) return
+    if (onPageChange) {
+      onPageChange(newPage)
+      return
+    }
     const params = new URLSearchParams(searchParams)
     params.set("page", newPage.toString())
     router.push(`${pathname}?${params.toString()}`)

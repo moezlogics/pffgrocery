@@ -5,13 +5,28 @@ import { GridSkeleton } from "@modules/skeletons/templates/page-skeletons"
 import { getRegion } from "@lib/data/regions"
 import { getSiteSettings } from "@lib/data/site-settings"
 import { parseCategoryBar } from "@lib/util/category-bar"
-import { listBanners } from "@lib/data/banners"
+import { listBannerSections } from "@lib/data/banners"
 import { canonicalUrl, ROBOTS_INDEX } from "@lib/util/seo-url"
-import HeroSlider from "@modules/home/components/hero-slider"
+import BannerSections from "@modules/home/components/banner-sections"
 import ProductRail from "@modules/home/components/featured-products/product-rail"
 import CategoryCarouselServer from "@modules/home/components/category-carousel/server"
 import { listBrands } from "@lib/data/brands"
-import MobileBrandsSidebar from "@modules/store/components/mobile-brands-sidebar"
+import { BrandsRailLayout } from "@modules/store/components/mobile-brands-sidebar"
+
+/**
+ * ISR — the homepage was the ONLY high-traffic route still rendering
+ * on every request (ƒ in the build output) while product pages were
+ * already cached (●). Every data source here is force-cache/revalidate
+ * (banners 60s, settings, brands, products), so the page itself can be
+ * served from the full-route cache and re-rendered in the background.
+ * Same proven pattern as [...slug]: revalidate + empty static params.
+ */
+export const revalidate = 300
+export async function generateStaticParams() {
+  // Empty on purpose — the backend may be offline at build time. Each
+  // countryCode renders once on first hit, then serves from cache.
+  return []
+}
 
 
 /**
@@ -64,9 +79,9 @@ export default async function Home(props: {
   const { countryCode } = await props.params
 
   // Parallelize independent fetches so the homepage TTFB stays tight.
-  const [region, banners, settings, brands] = await Promise.all([
+  const [region, bannerSections, settings, brands] = await Promise.all([
     getRegion(countryCode),
-    listBanners(),
+    listBannerSections("home"),
     getSiteSettings(),
     listBrands().catch(() => []),
   ])
@@ -114,28 +129,27 @@ export default async function Home(props: {
 
   return (
     <div className="container-anvogue pt-2 pb-6">
-      {/* Hero banner slider — admin-managed. Renders at the very top (full width, above brands sidebar)
-          only when banners are uploaded, so it doesn't push the sidebar down otherwise. */}
-      {banners.length > 0 && (
+      {/* Banner CMS — admin-managed sections, each with its own layout
+          (1 = carousel, 2 or 3 = split grid). Full width, above the
+          brands sidebar; renders nothing when no banners are uploaded. */}
+      {bannerSections.length > 0 && (
         <div className="mb-4 small:mb-6">
-          <HeroSlider banners={banners} />
+          <BannerSections sections={bannerSections} />
         </div>
       )}
 
-      <div className="flex gap-4 small:gap-6 -mx-4 small:mx-0">
-        {/* Left column: Brands Sidebar (both desktop & mobile) */}
-        <aside className="w-[68px] small:w-[110px] flex-shrink-0 self-start sticky top-[56px] small:top-[64px] h-[calc(100vh-56px-44px)] small:h-[calc(100vh-64px)] overflow-y-auto z-30">
-          <MobileBrandsSidebar brands={brandItems} />
-        </aside>
+      {/* Category icons — their OWN full-width container, like the
+          banners. They used to live inside the products column (to the
+          right of the brands sidebar), which squeezed them into a narrow
+          strip sitting on top of the product grid. */}
+      <div className="mb-3 small:mb-5">
+        <CategoryCarouselServer
+          selectedIds={topCategoryBar.ids}
+          hidden={topCategoryBar.hidden}
+        />
+      </div>
 
-        {/* Right column: Main Homepage Content */}
-        <div className="flex-1 min-w-0 p-3 small:p-0">
-          {/* Category icons rail */}
-          <CategoryCarouselServer
-            selectedIds={topCategoryBar.ids}
-            hidden={topCategoryBar.hidden}
-          />
-
+      <BrandsRailLayout brands={brandItems}>
           {/* Show latest products directly below the categories.
               Wrapped in Suspense so the server STREAMS: the shell (sidebar
               + category rail + hero) flushes to the browser immediately and
@@ -145,9 +159,13 @@ export default async function Home(props: {
               feel. */}
           <ul className="flex flex-col mt-0">
             <li>
-              <Suspense fallback={<GridSkeleton count={8} />}>
-                <ProductRail region={region} />
-              </Suspense>
+              {/* Above-the-fold rail rendered IN THE SHELL (no Suspense):
+                  its first product image is the mobile LCP. Behind a
+                  Suspense skeleton the image swapped in late and Lighthouse
+                  couldn't settle an LCP (NO_LCP → Performance errored). The
+                  listing query is ISR-cached, so this rarely blocks TTFB,
+                  and in return the LCP image ships in the initial HTML. */}
+              <ProductRail region={region} />
             </li>
           </ul>
 
@@ -185,8 +203,7 @@ export default async function Home(props: {
               </div>
             </div>
           )}
-        </div>
-      </div>
+      </BrandsRailLayout>
     </div>
   )
 }

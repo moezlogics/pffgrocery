@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useCallback, useMemo } from "react"
+import type { FacetGroup } from "@lib/util/facets"
 
 type FilterChip = {
   label: string
@@ -12,8 +13,19 @@ type FilterChip = {
  * Renders the currently-applied filters as removable chips and a
  * "Clear all" action. Reads the relevant query params from the URL
  * directly and emits `router.replace()` mutations.
+ *
+ * Facet chips are driven by the same `facets` the sidebar renders, which
+ * is how a chip can say "EUR 42" while the URL carries the category
+ * handle `men-eur-42`. Removing a chip drops that ONE value, leaving the
+ * rest of its group intact.
  */
-const ActiveFilters = ({ currentCategoryName }: { currentCategoryName?: string }) => {
+const ActiveFilters = ({
+  currentCategoryName,
+  facets = [],
+}: {
+  currentCategoryName?: string
+  facets?: FacetGroup[]
+}) => {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -29,8 +41,39 @@ const ActiveFilters = ({ currentCategoryName }: { currentCategoryName?: string }
     [pathname, router, searchParams]
   )
 
+  /** Drop a single value from a multi-value facet param. */
+  const removeValue = useCallback(
+    (param: string, value: string) => {
+      const params = new URLSearchParams(searchParams)
+      const rest = (params.get(param) || "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v && v !== value)
+      if (rest.length) params.set(param, rest.join(","))
+      else params.delete(param)
+      params.delete("page")
+      const qs = params.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    },
+    [pathname, router, searchParams]
+  )
+
   const chips: FilterChip[] = useMemo(() => {
     const list: FilterChip[] = []
+
+    for (const group of facets) {
+      const raw = searchParams.get(group.param)
+      if (!raw) continue
+      const selected = raw.split(",").map((v) => v.trim()).filter(Boolean)
+      for (const value of selected) {
+        const match = group.values.find((v) => v.value === value)
+        list.push({
+          label: `${group.label}: ${match?.label ?? value}`,
+          onRemove: () => removeValue(group.param, value),
+        })
+      }
+    }
+
     const minP = searchParams.get("minPrice")
     const maxP = searchParams.get("maxPrice")
     const inStock = searchParams.get("inStock") === "true"
@@ -51,7 +94,7 @@ const ActiveFilters = ({ currentCategoryName }: { currentCategoryName?: string }
     }
 
     return list
-  }, [searchParams, remove])
+  }, [searchParams, remove, removeValue, facets])
 
   if (!chips.length && !currentCategoryName) return null
 
@@ -77,7 +120,9 @@ const ActiveFilters = ({ currentCategoryName }: { currentCategoryName?: string }
       ))}
       {chips.length > 0 && (
         <button
-          onClick={() => remove(["minPrice", "maxPrice", "inStock"])}
+          onClick={() =>
+            remove(["minPrice", "maxPrice", "inStock", ...facets.map((f) => f.param)])
+          }
           className="text-[12px] font-medium text-ink/60 underline underline-offset-4 decoration-dotted hover:text-danger hover:decoration-solid ml-1 transition-colors"
         >
           Clear all

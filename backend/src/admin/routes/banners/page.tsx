@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { Photo } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -17,6 +18,7 @@ import {
   deleteBanner,
   listBanners,
   updateBanner,
+  readImageSize,
 } from "../../lib/banners-sdk"
 import { uploadFile } from "../../lib/settings-sdk"
 import { A, adminSection } from "../../lib/admin-theme"
@@ -68,11 +70,19 @@ const ImageField = ({
   value,
   onChange,
   help,
+  onSize,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   help?: string
+  /**
+   * Receives the picked image's natural pixel size. The storefront
+   * renders banners at their OWN ratio (no fixed banner height), and
+   * storing the real dimensions is what lets it reserve exact space so
+   * the page doesn't shift while the image loads.
+   */
+  onSize?: (size: { width: number; height: number } | null) => void
 }) => {
   const [uploading, setUploading] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
@@ -80,8 +90,13 @@ const ImageField = ({
   const onFile = async (file: File) => {
     setUploading(true)
     try {
+      // Measure BEFORE upload — we still have the raw File here.
+      const size = await readImageSize(file)
       const uploaded = await uploadFile(file)
-      if (uploaded.url) onChange(uploaded.url)
+      if (uploaded.url) {
+        onChange(uploaded.url)
+        onSize?.(size)
+      }
     } catch (e) {
       toast.error("Upload failed: " + (e as Error).message)
     } finally {
@@ -431,11 +446,33 @@ const Page = () => {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <ImageField
-                label="Desktop Image"
-                help="Wide hero image. Recommended 1920×720."
+                label="Image"
+                help="Any size — the storefront renders it at its own ratio, so a tall image stays tall. For a 2-up or 3-up section use taller artwork."
                 value={editing.image_url || ""}
                 onChange={(v) => setEditing({ ...editing, image_url: v })}
+                onSize={(size) =>
+                  setEditing((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          image_width: size?.width ?? null,
+                          image_height: size?.height ?? null,
+                        }
+                      : prev
+                  )
+                }
               />
+              {editing.image_width && editing.image_height ? (
+                <p style={{ fontSize: 11, color: "#6b7280", marginTop: -6 }}>
+                  Natural size {editing.image_width}×{editing.image_height} —
+                  stored so the page reserves exact space (no layout shift).
+                </p>
+              ) : editing.image_url ? (
+                <p style={{ fontSize: 11, color: "#d97706", marginTop: -6 }}>
+                  Size unknown (uploaded before this feature). Re-upload the
+                  image to enable exact-ratio rendering.
+                </p>
+              ) : null}
               <ImageField
                 label="Mobile Image (optional)"
                 help="Shown on screens < 768px. Recommended 750×900."
@@ -558,6 +595,8 @@ const Page = () => {
 
 export const config = defineRouteConfig({
   label: "Banners",
+  icon: Photo,
+  rank: 3,
 })
 
 export default Page

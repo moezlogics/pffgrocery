@@ -95,6 +95,8 @@ export default async function StorePage(props: Params) {
         maxPrice={maxPrice}
         inStock={inStock}
         searchParams={searchParams}
+        /* Banners targeted at the main shop archive. */
+        bannerPlacement="store"
       />
 
       {/* Collection gallery — creative masonry below products */}

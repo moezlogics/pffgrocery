@@ -25,6 +25,44 @@ const stripLocale = (p: string): string => {
   return "/" + parts.join("/")
 }
 
+/** Shared rail + sticky aside — height follows content (not full viewport). */
+export const BRANDS_RAIL_ASIDE_CLASS =
+  "w-[68px] small:w-[110px] flex-shrink-0 self-start sticky top-[56px] small:top-[64px] max-h-[calc(100vh-56px-44px)] small:max-h-[calc(100vh-64px)] overflow-y-auto z-30"
+
+export const BRANDS_RAIL_ROW_CLASS =
+  "flex gap-4 small:gap-6 -mx-4 small:mx-0"
+
+export const BRANDS_RAIL_CONTENT_CLASS =
+  "flex-1 min-w-0 p-3 small:p-0"
+
+/**
+ * Shared shell so homepage and archive pages render the brands rail
+ * with identical width, gap, sticky behavior, and content padding.
+ */
+export function BrandsRailLayout({
+  brands,
+  children,
+}: {
+  brands: BrandItem[]
+  children: React.ReactNode
+}) {
+  return (
+    <div className={BRANDS_RAIL_ROW_CLASS}>
+      <aside className={BRANDS_RAIL_ASIDE_CLASS}>
+        <MobileBrandsSidebar brands={brands} />
+      </aside>
+      <div className={BRANDS_RAIL_CONTENT_CLASS}>{children}</div>
+    </div>
+  )
+}
+
+/**
+ * Brands rail — FootFlare "Top Brands" styling on the existing sidebar
+ * logic (top-level brands only, Shop All entry, active-route detection).
+ * Each brand is a circular white tile (template `.dz-icon-box
+ * .fill-white`) with the name below; the active brand gets a primary
+ * ring + left indicator strip.
+ */
 export default function MobileBrandsSidebar({ brands }: Props) {
   const pathname = usePathname() || "/"
   const cleanPath = stripLocale(pathname)
@@ -35,100 +73,107 @@ export default function MobileBrandsSidebar({ brands }: Props) {
   const isAllActive = cleanPath === "/" || cleanPath === "/store"
 
   return (
-    <div className="flex flex-col h-full bg-surface-alt/80 border-r border-line/45 overflow-y-auto no-scrollbar backdrop-blur-md">
+    <div className="flex flex-col bg-surface-alt/80 border-r border-line/45 overflow-y-auto no-scrollbar backdrop-blur-md">
       {/* Scrollable list */}
-      <ul className="flex flex-col gap-1.5 small:gap-2 py-2 small:py-3">
+      <ul className="flex flex-col gap-0.5 small:gap-1 py-2 small:py-3">
         {/* "Shop All" Item */}
-        <li className="relative px-1.5 small:px-2">
-          <LocalizedClientLink
-            href="/store"
+        <SidebarItem href="/store" label="Shop All" active={isAllActive}>
+          <div
             className={[
-              "flex flex-col items-center justify-center py-1.5 px-0.5 small:py-2.5 small:px-1.5 transition-all text-center rounded-lg small:rounded-xl relative group",
-              "focus-visible:outline-none focus-visible:bg-surface",
+              "w-11 h-11 small:w-[60px] small:h-[60px] rounded-full flex items-center justify-center transition-all shrink-0 border",
               isAllActive
-                ? "bg-surface/90 font-semibold text-primary shadow-sm border border-line/30 scale-[1.02]"
-                : "text-ink/65 hover:bg-surface/50 hover:text-primary hover:scale-[1.02]"
+                ? "bg-primary text-primary-fg border-primary shadow-md"
+                : "bg-white text-neutral-900 border-line/70 shadow-sm group-hover:border-primary/40 group-hover:shadow-md",
             ].join(" ")}
           >
-            {/* Active primary indicator strip on the left */}
-            {isAllActive && (
-              <span
-                className="absolute left-1 top-2 bottom-2 w-0.5 small:left-1.5 small:top-3 small:bottom-3 small:w-1 rounded-full bg-primary"
-                aria-hidden
-              />
-            )}
-            
-            <div className={[
-              "w-9 h-9 small:w-12 small:h-12 rounded-lg small:rounded-xl flex items-center justify-center mb-1 transition-all relative shrink-0",
-              isAllActive 
-                ? "bg-primary/10 text-primary border border-primary/20 shadow-inner"
-                : "bg-surface-alt/70 text-ink/40 border border-line/40 group-hover:bg-primary/5 group-hover:text-primary group-hover:border-primary/20"
-            ].join(" ")}>
-              <i className="ph-bold ph-squares-four text-base small:text-xl" />
-            </div>
-            
-            <span className="text-[9px] small:text-[11px] leading-tight font-semibold break-words max-w-[48px] small:max-w-[64px] transition-colors">
-              Shop All
-            </span>
-          </LocalizedClientLink>
-        </li>
+            <i className="ph-bold ph-squares-four text-lg small:text-2xl" aria-hidden />
+          </div>
+        </SidebarItem>
 
         {/* Brand Items */}
         {topBrands.map((brand) => {
           const brandHref = getBrandPath(brand, brands)
-          const isActive = cleanPath === brandHref || cleanPath.startsWith(brandHref + "/")
+          const isActive =
+            cleanPath === brandHref || cleanPath.startsWith(brandHref + "/")
 
           return (
-            <li key={brand.id} className="relative px-1.5 small:px-2">
-              <LocalizedClientLink
-                href={brandHref}
+            <SidebarItem
+              key={brand.id}
+              href={brandHref}
+              label={brand.name}
+              active={isActive}
+            >
+              <div
                 className={[
-                  "flex flex-col items-center justify-center py-1.5 px-0.5 small:py-2.5 small:px-1.5 text-center transition-all rounded-lg small:rounded-xl relative group",
-                  "focus-visible:outline-none focus-visible:bg-surface",
+                  "relative w-11 h-11 small:w-[60px] small:h-[60px] rounded-full overflow-hidden bg-white border flex items-center justify-center transition-all shrink-0",
                   isActive
-                    ? "bg-surface/90 font-semibold text-primary shadow-sm border border-line/30 scale-[1.02]"
-                    : "text-ink/65 hover:bg-surface/50 hover:text-primary hover:scale-[1.02]"
+                    ? "border-primary ring-2 ring-primary/25 shadow-md scale-[1.05]"
+                    : "border-line/70 shadow-sm group-hover:border-primary/40 group-hover:shadow-md",
                 ].join(" ")}
               >
-                {/* Active primary indicator strip on the left */}
-                {isActive && (
-                  <span
-                    className="absolute left-1 top-2 bottom-2 w-0.5 small:left-1.5 small:top-3 small:bottom-3 small:w-1 rounded-full bg-primary"
-                    aria-hidden
+                {brand.logo_url ? (
+                  <Image
+                    src={brand.logo_url}
+                    alt={brand.name}
+                    fill
+                    sizes="(max-width: 1024px) 44px, 60px"
+                    className="object-contain p-1.5 small:p-2 transition-transform group-hover:scale-110"
                   />
+                ) : (
+                  <span className="text-neutral-900 text-sm small:text-lg font-semibold">
+                    {brand.name.slice(0, 1).toUpperCase()}
+                  </span>
                 )}
-
-                {/* Brand Logo Container */}
-                <div className={[
-                  "w-9 h-9 small:w-12 small:h-12 rounded-lg small:rounded-xl overflow-hidden bg-white border flex items-center justify-center mb-1 transition-all relative shrink-0",
-                  isActive 
-                    ? "border-primary/50 shadow-md scale-[1.05]" 
-                    : "border-line/60 group-hover:border-primary/30 group-hover:shadow-sm"
-                ].join(" ")}>
-                  {brand.logo_url ? (
-                    <Image
-                      src={brand.logo_url}
-                      alt={brand.name}
-                      fill
-                      sizes="(max-width: 1024px) 36px, 48px"
-                      className="object-contain p-1 small:p-1.5 transition-transform group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-surface flex items-center justify-center text-ink/30 transition-colors group-hover:text-primary/70">
-                      <i className="ph ph-tag text-sm small:text-lg" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Brand Label */}
-                <span className="text-[9px] small:text-[11px] leading-tight font-semibold break-words max-w-[48px] small:max-w-[64px] transition-colors">
-                  {brand.name}
-                </span>
-              </LocalizedClientLink>
-            </li>
+              </div>
+            </SidebarItem>
           )
         })}
       </ul>
     </div>
+  )
+}
+
+/**
+ * Shared tile shell — circular icon/logo on top, tiny label below,
+ * primary indicator strip on the left when active.
+ */
+function SidebarItem({
+  href,
+  label,
+  active,
+  children,
+}: {
+  href: string
+  label: string
+  active: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <li className="relative px-1.5 small:px-2">
+      <LocalizedClientLink
+        href={href}
+        className={[
+          "group flex flex-col items-center justify-center gap-1 py-2 px-0.5 small:py-2.5 small:px-1 text-center transition-all rounded-xl relative",
+          "focus-visible:outline-none focus-visible:bg-surface",
+          active
+            ? "text-primary font-semibold"
+            : "text-ink/60 hover:text-primary",
+        ].join(" ")}
+      >
+        {/* Active primary indicator strip on the left */}
+        {active && (
+          <span
+            className="absolute left-0 top-3 bottom-3 w-[3px] small:w-1 rounded-r-full bg-primary"
+            aria-hidden
+          />
+        )}
+
+        {children}
+
+        <span className="text-[9px] small:text-[11px] leading-tight break-words max-w-[52px] small:max-w-[72px] transition-colors">
+          {label}
+        </span>
+      </LocalizedClientLink>
+    </li>
   )
 }

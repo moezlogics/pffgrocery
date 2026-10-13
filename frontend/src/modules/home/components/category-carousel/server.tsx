@@ -1,4 +1,7 @@
 import { listCategories } from "@lib/data/categories"
+import { getSiteSettings } from "@lib/data/site-settings"
+import { resolveCategoryIconSize } from "@lib/util/category-icon-size"
+import { buildCategoryPathFromList } from "@lib/util/category-path"
 import CategoryCarousel, { CategoryCarouselItem } from "./index"
 
 /**
@@ -13,12 +16,15 @@ import CategoryCarousel, { CategoryCarouselItem } from "./index"
  *
  * Category images come from `metadata.image` (string URL). Admins set this
  * via the built-in Medusa category editor's metadata fields.
+ *
+ * Handles are ALWAYS the full parent-prefixed path (e.g. `men/eur-42`),
+ * never the leaf alone — `[...slug]` rejects leaf-only nested URLs with 404.
  */
-function toItem(c: any): CategoryCarouselItem {
+function toItem(c: any, all: any[]): CategoryCarouselItem {
   return {
     id: c.id,
     name: c.name,
-    handle: c.handle,
+    handle: buildCategoryPathFromList(c, all) || c.handle,
     image:
       (typeof c.metadata?.image === "string" && c.metadata.image) ||
       (typeof c.metadata?.thumbnail === "string" && c.metadata.thumbnail) ||
@@ -38,6 +44,12 @@ export default async function CategoryCarouselServer({
   // Explicitly hidden by the admin → render nothing.
   if (hidden) return null
 
+  // One admin setting drives the icon size on EVERY surface that renders
+  // this rail (homepage, shop, category, subcategory pages).
+  const iconSize = resolveCategoryIconSize(
+    await getSiteSettings().catch(() => ({} as any))
+  )
+
   let items: CategoryCarouselItem[] = []
   try {
     const categories = (await listCategories({ limit: 200 })) || []
@@ -48,18 +60,18 @@ export default async function CategoryCarouselServer({
       items = selectedIds
         .map((id) => byId.get(id))
         .filter(Boolean)
-        .map((c: any) => toItem(c))
+        .map((c: any) => toItem(c, categories))
     } else {
       // Default: top-level departments.
       items = categories
         .filter((c: any) => !c.parent_category_id)
         .slice(0, 20)
-        .map((c: any) => toItem(c))
+        .map((c: any) => toItem(c, categories))
     }
   } catch (e) {
     console.error("[category-carousel] failed to load categories", e)
   }
 
   if (!items.length) return null
-  return <CategoryCarousel items={items} />
+  return <CategoryCarousel items={items} iconSize={iconSize} />
 }

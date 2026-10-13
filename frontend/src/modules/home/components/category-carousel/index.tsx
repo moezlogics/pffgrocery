@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+import type { CategoryIconSize } from "@lib/util/category-icon-size"
+
 export type CategoryCarouselItem = {
   id: string
   name: string
@@ -13,10 +15,18 @@ export type CategoryCarouselItem = {
 
 type Props = {
   items: CategoryCarouselItem[]
-  /** URL prefix for each item link. Defaults to `/` (flat category URLs). */
+  /** URL prefix for each item link. Defaults to `/`. Item `handle` may
+   *  already be a full parent-prefixed path (e.g. `men/eur-42`). */
   linkPrefix?: string
   /** Optional section label for aria. */
   ariaLabel?: string
+  /**
+   * Admin-controlled icon dimensions (site setting `category_icon_size`),
+   * resolved by `resolveCategoryIconSize`. Applied inline rather than via
+   * Tailwind classes because the value is dynamic — Tailwind can only
+   * generate classes it can see at build time.
+   */
+  iconSize: CategoryIconSize
 }
 
 /**
@@ -36,6 +46,7 @@ export default function CategoryCarousel({
   items,
   linkPrefix = "/",
   ariaLabel = "Shop by category",
+  iconSize,
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -70,6 +81,16 @@ export default function CategoryCarousel({
     <section
       aria-label={ariaLabel}
       className="container-anvogue pt-0 pb-1 relative"
+      /* Admin icon size travels as CSS custom properties: inline styles
+         can't express a media query, and Tailwind can't emit classes for
+         a runtime value — but a CSS var set inline works with both.
+         `.cat-icon-box` / `.cat-icon-tile` in globals.css consume these. */
+      style={
+        {
+          "--cat-icon-m": `${iconSize.mobile}px`,
+          "--cat-icon-d": `${iconSize.desktop}px`,
+        } as React.CSSProperties
+      }
     >
       {/* Arrows (desktop only) */}
       {canScrollLeft && (
@@ -97,26 +118,30 @@ export default function CategoryCarousel({
         ref={trackRef}
         className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory px-2 py-2 -mx-2"
       >
-        {items.map((c) => (
+        {items.map((c, i) => (
           <LocalizedClientLink
             key={c.id}
             href={`${linkPrefix}${c.handle}`}
-            className="group snap-start flex flex-col items-center flex-shrink-0 w-[64px] md:w-[88px]"
+            className="group snap-start flex flex-col items-center flex-shrink-0 cat-icon-tile"
           >
             {/* Image — clean PNG, no borders, no backgrounds */}
-            <div className="relative w-[60px] h-[60px] md:w-[84px] md:h-[84px] flex items-center justify-center">
+            <div className="relative flex items-center justify-center cat-icon-box">
               {c.image ? (
                 <div className="relative w-full h-full transition-transform duration-500 ease-out group-hover:scale-110">
                   <Image
                     src={c.image}
                     alt={c.name}
                     fill
-                    sizes="(max-width: 768px) 60px, 84px"
+                    sizes={`(max-width: 768px) ${iconSize.mobile}px, ${iconSize.desktop}px`}
                     className="object-contain"
+                    // The first row of category icons is ABOVE THE FOLD — a
+                    // lazy LCP image is a Lighthouse red flag. Eager-load the
+                    // first few (the rest scroll horizontally off-screen).
+                    priority={i < 5}
                   />
                 </div>
               ) : (
-                <div className="w-[52px] h-[52px] md:w-[76px] md:h-[76px] rounded-xl flex items-center justify-center bg-gradient-to-br from-brand-green/40 to-brand-green/80 text-[rgb(var(--color-primary))] font-medium text-lg md:text-xl shadow-sm">
+                <div className="w-[86%] h-[86%] rounded-xl flex items-center justify-center bg-gradient-to-br from-brand-green/40 to-brand-green/80 text-[rgb(var(--color-primary))] font-medium text-lg md:text-xl shadow-sm">
                   {c.name.trim().charAt(0).toUpperCase()}
                 </div>
               )}

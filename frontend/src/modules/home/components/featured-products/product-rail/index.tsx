@@ -4,6 +4,7 @@ import {
   resolveProductCardAspectClass,
 } from "@lib/data/site-settings"
 import { PRODUCT_CARD_FIELDS } from "@lib/util/product-card-fields"
+import { isProductInStock } from "@lib/util/product"
 import { HttpTypes } from "@medusajs/types"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -38,7 +39,7 @@ export default async function ProductRail({
 
   const [
     {
-      response: { products: pricedProducts },
+      response: { products: fetchedProducts },
     },
     settings,
   ] = await Promise.all([
@@ -48,7 +49,9 @@ export default async function ProductRail({
         ...(category?.id ? { category_id: [category.id] } : {}),
         ...(collection?.id ? { collection_id: collection.id } : {}),
         order: "-created_at", // Sort by newest
-        limit: safeLimit,
+        // Fetch a few extra so hiding out-of-stock items below still
+        // leaves a full rail.
+        limit: Math.min(24, safeLimit + 4),
         // Light card fields — homepage rail doesn't need variant images/
         // metadata/tags (big payload cut on the most-visited page).
         fields: PRODUCT_CARD_FIELDS,
@@ -56,6 +59,12 @@ export default async function ProductRail({
     }),
     getSiteSettings(),
   ])
+
+  // Out-of-stock products never appear on the homepage (search + direct
+  // URL still work; the PDP shows them with disabled buy buttons).
+  const pricedProducts = (fetchedProducts || [])
+    .filter(isProductInStock)
+    .slice(0, safeLimit)
 
   if (!pricedProducts?.length) return null
 

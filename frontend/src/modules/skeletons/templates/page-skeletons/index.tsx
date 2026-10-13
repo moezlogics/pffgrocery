@@ -67,7 +67,10 @@ export const ProductDetailSkeleton = () => (
       <div className="w-2/3 max-w-md h-3 bg-surface-alt rounded-md mb-3" />
 
       {/* Mobile: Full-width stacked gallery on top */}
-      <div className="lg:hidden flex flex-col gap-4.5 mb-5">
+      {/* gap-4 — `gap-4.5` isn't a real Tailwind step and compiled to
+          nothing, so the skeleton had no spacing (and didn't match the
+          real PDP it stands in for). */}
+      <div className="lg:hidden flex flex-col gap-4 mb-5">
         {/* Gallery Image placeholder */}
         <div className="w-full aspect-[3/4] bg-surface rounded-xl border border-line/30" />
 

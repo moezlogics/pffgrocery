@@ -20,4 +20,25 @@ export const Banner = model.define("banner", {
   theme: model.text().default("dark"), // "dark" (glass dark) or "light" (glass light)
   sort_order: model.number().default(0),
   is_active: model.boolean().default(true),
+
+  /**
+   * Section this banner belongs to (banner_section.id). NULL = a legacy
+   * banner created before sections existed; the storefront groups those
+   * into an implicit first carousel section so nothing breaks.
+   */
+  section_id: model.text().nullable(),
+
+  /**
+   * Natural pixel size of `image_url`, captured by the admin uploader.
+   *
+   * The storefront renders banners at their OWN aspect ratio — there is
+   * deliberately no fixed/absolute banner height anywhere. Storing the
+   * real dimensions lets <Image> reserve exactly the right space (so the
+   * image never letterboxes, crops, or causes layout shift) while still
+   * being optimised. NULL for legacy rows → the renderer falls back to a
+   * plain auto-height <img>, which is still natural-ratio, just
+   * unoptimised.
+   */
+  image_width: model.number().nullable(),
+  image_height: model.number().nullable(),
 })

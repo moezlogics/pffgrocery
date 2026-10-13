@@ -15,7 +15,7 @@
  * default listing stays in the static HTML for crawlers; on the client it
  * mounts and drives the reactive filtering.
  */
-import React, { Suspense, useEffect, useMemo, useState } from "react"
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Pagination } from "@modules/store/components/pagination"
 
@@ -30,6 +30,11 @@ export type GridItemMeta = {
   createdAt: string | null
   /** Raw metadata.specs (string values) for spec_* filters. */
   specs: Record<string, unknown>
+  /**
+   * Facet values keyed by query param (`cat_*`, `opt_*`, `brand`), built
+   * by buildFacetIndex from the same product the sidebar counted.
+   */
+  facets: Record<string, string[]>
 }
 
 function SearchParamsBridge({
@@ -45,23 +50,36 @@ function SearchParamsBridge({
   return null
 }
 
+/**
+ * Filter + sort the in-scope items for the current query. Pagination is
+ * NOT applied here — it's owned as local state by the component so page
+ * changes never touch the server (the URL is updated via history only).
+ */
 function applyQuery(items: GridItemMeta[], qs: string) {
   const params = new URLSearchParams(qs)
 
   const sortBy = params.get("sortBy") || "created_at"
-  const page = Math.max(1, parseInt(params.get("page") || "1", 10) || 1)
   const minP = params.get("minPrice") ? Number(params.get("minPrice")) : null
   const maxP = params.get("maxPrice") ? Number(params.get("maxPrice")) : null
   const inStockOnly = params.get("inStock") === "true"
-  const showUpcoming = params.get("upcoming") !== "false"
 
   const specFilters: Record<string, string[]> = {}
+  // Facet params (`cat_*`, `opt_*`, `brand`) are matched against the
+  // product's prebuilt index. OR within a group, AND across groups —
+  // picking two sizes widens the results, adding a colour narrows them.
+  const facetFilters: Record<string, string[]> = {}
   params.forEach((val, key) => {
-    if (key.startsWith("spec_") && val) {
-      specFilters[key.substring(5)] = val
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
+    if (!val) return
+    const values = val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (!values.length) return
+
+    if (key.startsWith("spec_")) {
+      specFilters[key.substring(5)] = values
+    } else if (key.startsWith("cat_") || key.startsWith("opt_") || key === "brand") {
+      facetFilters[key] = values
     }
   })
 
@@ -69,12 +87,16 @@ function applyQuery(items: GridItemMeta[], qs: string) {
 
   indices = indices.filter((i) => {
     const it = items[i]
-    if (!showUpcoming && it.upcoming) return false
     if (inStockOnly && !it.inStock) return false
     if (minP !== null || maxP !== null) {
       if (it.price === null) return false
       if (minP !== null && it.price < minP) return false
       if (maxP !== null && it.price > maxP) return false
+    }
+    for (const [param, filterValues] of Object.entries(facetFilters)) {
+      const owned = (it.facets || {})[param]
+      if (!owned || !owned.length) return false
+      if (!owned.some((v) => filterValues.includes(v))) return false
     }
     for (const [specKey, filterValues] of Object.entries(specFilters)) {
       if (filterValues.length === 0) continue
@@ -116,7 +138,15 @@ function applyQuery(items: GridItemMeta[], qs: string) {
     })
   }
 
-  return { indices, page }
+  return { indices }
+}
+
+/** The filter/sort signature of a query, ignoring the page number. */
+function filterSignature(qs: string): string {
+  const p = new URLSearchParams(qs)
+  p.delete("page")
+  p.sort()
+  return p.toString()
 }
 
 export default function ProductGridClient({
@@ -132,16 +162,56 @@ export default function ProductGridClient({
 }) {
   // null → not hydrated yet → render the server default (page 1, latest).
   const [qs, setQs] = useState<string | null>(null)
+  // Pagination is LOCAL state — clicking a page never hits the server.
+  const [page, setPage] = useState(1)
+  const gridTopRef = useRef<HTMLDivElement>(null)
+  const firstLoad = useRef(true)
+  const filterKeyRef = useRef<string | null>(null)
+
+  // Seed the page from the URL on first hydration (so a shared
+  // `?page=3` link opens on page 3), then reset to 1 whenever the
+  // FILTER/SORT signature changes — a new filter should start at page 1.
+  useEffect(() => {
+    if (qs === null) return
+    const sig = filterSignature(qs)
+    if (firstLoad.current) {
+      firstLoad.current = false
+      filterKeyRef.current = sig
+      const urlPage = Math.max(
+        1,
+        parseInt(new URLSearchParams(qs).get("page") || "1", 10) || 1
+      )
+      if (urlPage !== 1) setPage(urlPage)
+    } else if (sig !== filterKeyRef.current) {
+      filterKeyRef.current = sig
+      setPage(1)
+    }
+  }, [qs])
 
   const view = useMemo(() => {
-    const effectiveQs = qs ?? ""
-    const { indices, page } = applyQuery(items, effectiveQs)
+    const { indices } = applyQuery(items, qs ?? "")
     const totalPages = Math.max(1, Math.ceil(indices.length / PRODUCT_LIMIT))
     const safePage = Math.min(page, totalPages)
     const start = (safePage - 1) * PRODUCT_LIMIT
     const visible = indices.slice(start, start + PRODUCT_LIMIT)
     return { indices, visible, totalPages, page: safePage }
-  }, [items, qs])
+  }, [items, qs, page])
+
+  // Instant page change: update local state + reflect it in the URL via
+  // history (no navigation, no RSC round-trip), then scroll to the grid.
+  const handlePageChange = useCallback((next: number) => {
+    setPage(next)
+    const params = new URLSearchParams(window.location.search)
+    if (next <= 1) params.delete("page")
+    else params.set("page", String(next))
+    const nextQs = params.toString()
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (nextQs ? `?${nextQs}` : "")
+    )
+    gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [])
 
   const isFiltered = !!qs && qs.length > 0
   const shownTotal = isFiltered ? view.indices.length : Math.max(totalCount, view.indices.length)
@@ -166,6 +236,7 @@ export default function ProductGridClient({
       <Suspense fallback={null}>
         <SearchParamsBridge onParams={setQs} />
       </Suspense>
+      <div ref={gridTopRef} className="scroll-mt-24" />
       <p className="text-xs text-ink/55 mb-4">
         Showing <span className="text-ink font-medium">{view.visible.length}</span>{" "}
         of {shownTotal} {shownTotal === 1 ? "product" : "products"}
@@ -179,13 +250,12 @@ export default function ProductGridClient({
         ))}
       </ul>
       {view.totalPages > 1 && (
-        <Suspense fallback={null}>
-          <Pagination
-            data-testid="product-pagination"
-            page={view.page}
-            totalPages={view.totalPages}
-          />
-        </Suspense>
+        <Pagination
+          data-testid="product-pagination"
+          page={view.page}
+          totalPages={view.totalPages}
+          onPageChange={handlePageChange}
+        />
       )}
     </>
   )

@@ -1,14 +1,15 @@
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { getSiteSettings, resolveProductCardAspectClass } from "@lib/data/site-settings"
-import { PRODUCT_CARD_FIELDS } from "@lib/util/product-card-fields"
+import { PRODUCT_ARCHIVE_FIELDS } from "@lib/util/product-card-fields"
+import { buildFacetIndex } from "@lib/util/facets"
 import ProductPreview from "@modules/products/components/product-preview"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { isProductUpcoming } from "@lib/util/product"
+import { isProductUpcoming, isProductInStock } from "@lib/util/product"
 import ProductGridClient, { GridItemMeta } from "./product-grid-client"
 
 /**
- * ZMobile-specific scope limit. We pull up to 100 products for the active
+ * PFF Grocer-specific scope limit. We pull up to 100 products for the active
  * archive/scope (brand, category, collection) on the server, and let the
  * client-side ProductGridClient handle sorting, pagination, and filter
  * queries without server-side dynamic bailing.
@@ -79,9 +80,10 @@ export default async function PaginatedProducts({
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: SCOPE_LIMIT,
-    // Light card fields — drops variants.images/variants.metadata/tags
-    // from the grid payload (cards never render them).
-    fields: PRODUCT_CARD_FIELDS,
+    // Archive fields — card data plus the options/parent-category
+    // relations the facet sidebar is built from. Must stay identical to
+    // the template's facet query so the two share one cached request.
+    fields: PRODUCT_ARCHIVE_FIELDS,
     order: "created_at",
   }
 
@@ -117,12 +119,19 @@ export default async function PaginatedProducts({
   const aspectClass = resolveProductCardAspectClass(settings)
 
   const {
-    response: { products, count },
+    response: { products: allProducts, count },
   } = await listProducts({
     pageParam: 1,
     queryParams: queryParams as any,
     countryCode,
   })
+
+  // Out-of-stock products are hidden from archive grids entirely (they
+  // stay reachable via search + direct URL, where the PDP disables the
+  // buy buttons). Filtering here keeps the grid, count and client-side
+  // refinements consistent.
+  const products = allProducts.filter(isProductInStock)
+  const hiddenCount = allProducts.length - products.length
 
   const items: GridItemMeta[] = products.map((p: any) => ({
     id: p.id,
@@ -131,6 +140,9 @@ export default async function PaginatedProducts({
     upcoming: isProductUpcoming(p),
     createdAt: p.created_at ?? null,
     specs: (p.metadata?.specs || {}) as Record<string, unknown>,
+    // Category / brand / variant-option values this product can be
+    // filtered by, keyed by the same query param the sidebar emits.
+    facets: buildFacetIndex(p),
   }))
 
   const cards = products.map((p: any, index: number) => (
@@ -145,5 +157,11 @@ export default async function PaginatedProducts({
     />
   ))
 
-  return <ProductGridClient items={items} cards={cards} totalCount={count} />
+  return (
+    <ProductGridClient
+      items={items}
+      cards={cards}
+      totalCount={Math.max(0, count - hiddenCount)}
+    />
+  )
 }
