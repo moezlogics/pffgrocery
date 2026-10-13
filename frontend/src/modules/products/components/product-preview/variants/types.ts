@@ -15,6 +15,10 @@ export type ProductCardProps = {
   cheapestPrice: VariantPrice | null | undefined
   isSale: boolean
   isNew: boolean
+  /** Preloved condition from category (replaces NEW ribbon on FootFlare). */
+  conditionLabel?: string | null
+  /** Shoe size from size category, e.g. "EUR 42". */
+  sizeLabel?: string | null
   defaultVariantId?: string
   /**
    * Secondary image URL (if the product has ≥ 2 images) — used by

@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { Sparkles } from "@medusajs/icons"
 import TopCategoryEditor from "../../components/top-category-editor"
 import PageBuilderHeader from "../../components/page-builder-header"
 
@@ -33,6 +34,8 @@ const StorePageEditor = () => {
 
 export const config = defineRouteConfig({
   label: "Store Page",
+  icon: Sparkles,
+  rank: 4,
 })
 
 export default StorePageEditor

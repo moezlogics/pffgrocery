@@ -3,6 +3,10 @@ import { HttpTypes } from "@medusajs/types"
 import { getSiteSettings } from "@lib/data/site-settings"
 import { resolveCdnMetaBatch } from "@lib/data/cdn-meta"
 import { getProductPath } from "@lib/util/product"
+import {
+  getProductConditionLabel,
+  getProductSizeLabel,
+} from "@lib/util/product-category-meta"
 
 import {
   PRODUCT_CARD_VARIANTS,
@@ -73,6 +77,8 @@ export default async function ProductPreview({
     (secondaryImage && altMeta[secondaryImage]?.alt) || fallbackAlt
 
   const productPath = getProductPath(product)
+  const conditionLabel = getProductConditionLabel(product)
+  const sizeLabel = getProductSizeLabel(product)
 
   const variantKey = resolveProductCardVariant(settings.product_card_variant)
   const { Component } = PRODUCT_CARD_VARIANTS[variantKey]
@@ -85,6 +91,8 @@ export default async function ProductPreview({
     cheapestPrice,
     isSale,
     isNew,
+    conditionLabel,
+    sizeLabel,
     defaultVariantId,
     secondaryImage,
     thumbnailAlt,

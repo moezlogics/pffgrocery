@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { PaperPlane } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -1411,6 +1412,8 @@ function prettyGender(raw: string): string {
 
 export const config = defineRouteConfig({
   label: "Push Campaigns",
+  icon: PaperPlane,
+  rank: 17,
 })
 
 export default Page

@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { DocumentText } from "@medusajs/icons"
 import { Container, Heading, Button, Text, toast } from "@medusajs/ui"
 import { useEffect, useMemo, useState } from "react"
 import { fetchSettings, saveSettings } from "../../lib/settings-sdk"
@@ -788,6 +789,57 @@ const PreviewShopifyGrid = ({ data }: { data: typeof SAMPLE }) => (
   </div>
 )
 
+const PreviewFootFlare = ({ data }: { data: typeof SAMPLE }) => (
+  <div>
+    <div style={{ ...imgBox, borderRadius: 12 }}>
+      <img src={data.image} style={img} alt="" />
+      <div
+        style={{
+          position: "absolute",
+          top: 25,
+          left: -10,
+          transform: "rotate(-90deg)",
+          background: "#CC0D39",
+          color: "#fff",
+          fontSize: 10,
+          fontWeight: 500,
+          padding: "4px 10px",
+          borderRadius: "20px 0 0 20px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {data.discount}% OFF
+      </div>
+      <span style={{ position: "absolute", top: 10, right: 10, color: "#C6B4B8", fontSize: 16 }}>♥</span>
+    </div>
+    <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 8 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 500, color: "#1f1f1f", lineHeight: 1.4 }}>{data.title}</div>
+        <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "baseline" }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: "#1f1f1f" }}>{data.price}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", textDecoration: "line-through" }}>{data.original}</span>
+        </div>
+      </div>
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          minWidth: 28,
+          borderRadius: "50%",
+          background: "#F6F6F6",
+          color: "#1f1f1f",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 13,
+        }}
+      >
+        →
+      </div>
+    </div>
+  </div>
+)
+
 const PREVIEW_COMPONENTS: Record<string, ({ data }: { data: typeof SAMPLE }) => JSX.Element> = {
   minimal: PreviewMinimal,
   editorial: PreviewEditorial,
@@ -806,6 +858,7 @@ const PREVIEW_COMPONENTS: Record<string, ({ data }: { data: typeof SAMPLE }) => 
   pixio: PreviewPixio,
   "shopify-bold": PreviewShopifyBold,
   "shopify-grid": PreviewShopifyGrid,
+  footflare: PreviewFootFlare,
 }
 
 /* ------------------------------------------------------------------ */
@@ -1021,6 +1074,8 @@ const ProductCardsPage = () => {
 
 export const config = defineRouteConfig({
   label: "Product Cards",
+  icon: DocumentText,
+  rank: 7,
 })
 
 export default ProductCardsPage

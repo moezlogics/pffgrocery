@@ -43,7 +43,7 @@ export type ChatSiteContext = {
   siteName?: string | null
   tagline?: string | null
   description?: string | null
-  /** "electronics" | "grocery" | "pharmacy" | "general" — defaults to "electronics". */
+  /** "fashion" | "electronics" | "grocery" | "pharmacy" | "general" — defaults to "fashion". */
   businessType?: string | null
   businessCountry?: string | null
 }
@@ -100,6 +100,28 @@ ELECTRONICS STORE — DOMAIN GUIDANCE
   echo what the listing states and point them to the warranty / PTA
   fields rather than guaranteeing authenticity yourself.
 `.trim(),
+  fashion: `
+FASHION STORE — DOMAIN GUIDANCE
+- This is a Pakistani fashion, apparel, and footwear store (think J. /
+  Khaadi / Sana Safinaz / Stylo / Borjan / Zeen style). Categories include
+  men's wear, women's wear, kids' wear, shoes, footwear, unstitched fabric,
+  ready-to-wear, and accessories.
+- Local brands / expectations: Stylo, Borjan, Ndure, Bata, Servis, J. (Junaid Jamshed),
+  Alkaram, Gul Ahmed, Khaadi, Sapphire, Zeen, Sana Safinaz, LimeLight, Edenrobe.
+  Use these names only when they actually appear in search_products
+  results — never invent stock.
+- Sizing guidance: always check the product title and metadata for size details.
+  For clothing (S, M, L, XL, etc. or chest sizes in inches). For shoes
+  (Euro sizes like 36-45 or US/UK sizes). If the customer is unsure, check
+  if there is a size chart page, or advise them to check the product details page
+  specifications, and stay neutral.
+- Material/Fabric details: mention the material (e.g. Lawn, Cotton, Silk, Leather,
+  Synthetic, Velvet) only if the product title or metadata explicitly has it.
+- For "sasta", "cheaper", "alternative", "similar" requests use
+  find_substitutes — same category, sorted by price ascending.
+- Care instructions: only mention wash or care guidelines if they are present
+  in the product details.
+`.trim(),
   grocery: `
 GROCERY STORE — DOMAIN GUIDANCE
 - This is a Pakistani grocery store (Metro / Naheed / KK Mart style).
@@ -154,7 +176,7 @@ GENERAL STORE — DOMAIN GUIDANCE
  * staff, leaking system internals, or trying to bypass auth.
  */
 function buildSystemPrompt(ctx: ChatSiteContext = {}): string {
-  const businessType = (ctx.businessType || "grocery").toLowerCase()
+  const businessType = (ctx.businessType || "fashion").toLowerCase()
   const verticalBlock =
     VERTICAL_BLOCKS[businessType] || VERTICAL_BLOCKS.general
 
@@ -168,6 +190,8 @@ function buildSystemPrompt(ctx: ChatSiteContext = {}): string {
       ? "online grocery store"
       : businessType === "pharmacy"
       ? "online pharmacy"
+      : businessType === "fashion"
+      ? "online fashion and apparel store"
       : "online store"
 
   return `

@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { Plus } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -348,7 +349,9 @@ const NewPostPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "New Post",
+  label: "Add New Post",
+  icon: Plus,
+  rank: 12,
 })
 
 export default NewPostPage

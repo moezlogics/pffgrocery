@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { House } from "@medusajs/icons"
 import { Container, Heading, Button, Text, Input, toast, Badge } from "@medusajs/ui"
 import { useEffect, useState } from "react"
 import { fetchSettings, saveSettings } from "../../lib/settings-sdk"
@@ -326,7 +327,9 @@ const HomepageBuilder = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Homepage",
+  label: "Homepage Layout",
+  icon: House,
+  rank: 2,
 })
 
 export default HomepageBuilder

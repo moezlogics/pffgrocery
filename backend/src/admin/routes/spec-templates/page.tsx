@@ -1062,6 +1062,7 @@ export const Page = () => {
 export const config = defineRouteConfig({
   label: "Spec Templates",
   icon: ListBullet,
+  rank: 8,
 })
 
 export default Page

@@ -141,7 +141,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
   // ── Site context for the system prompt ─────────────────────────
   // We pass `siteContext` (structured) so the service can build a
-  // vertical-aware base prompt (grocery / pharmacy / general). The
+  // vertical-aware base prompt (fashion / grocery / pharmacy / general). The
   // free-form `extraSystem` only carries per-request bits like the
   // current page URL and auth state.
   let siteContext: {
@@ -162,7 +162,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
         settings.business_type?.trim() ||
         // Back-compat: pre-grocery installs only had `pharmacy_*` keys.
         (settings.pharmacy_license_number ? "pharmacy" : null) ||
-        "grocery",
+        "fashion",
       businessCountry:
         settings.business_country?.trim() ||
         settings.pharmacy_country?.trim() ||

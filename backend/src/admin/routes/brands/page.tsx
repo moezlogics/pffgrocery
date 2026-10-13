@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { Tag } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -585,6 +586,8 @@ const Page = () => {
 
 export const config = defineRouteConfig({
   label: "Brands",
+  icon: Tag,
+  rank: 5,
 })
 
 export default Page

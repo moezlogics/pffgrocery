@@ -388,6 +388,7 @@ const KV = ({ k, v, bad }: { k: string; v: string; bad?: boolean }) => (
 export const config = defineRouteConfig({
   label: "Notification Diagnostics",
   icon: BellAlert,
+  rank: 19,
 })
 
 export default Page

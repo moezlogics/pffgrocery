@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { CogSixTooth } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -507,11 +508,11 @@ const Page = () => {
 
       <Section
         title="Business Profile"
-        description="Drives the JSON-LD structured data (GroceryStore / Pharmacy / Store) Google indexes, and the live system prompt the AI assistant runs with. Defaults to grocery."
+        description="Drives the JSON-LD structured data (ClothingStore / Pharmacy / ElectronicsStore / Store) Google indexes, and the live system prompt the AI assistant runs with. Defaults to fashion."
       >
         <Field
           label="Business type"
-          help={`"grocery" (default) · "pharmacy" · "general". Controls Schema.org @type and the chatbot's domain guardrails.`}
+          help={`"fashion" (default) · "grocery" · "pharmacy" · "electronics" · "general". Controls Schema.org @type and the chatbot's domain guardrails.`}
         >
           <Input
             value={settings.business_type}
@@ -978,6 +979,8 @@ const Page = () => {
 
 export const config = defineRouteConfig({
   label: "Site Settings",
+  icon: CogSixTooth,
+  rank: 13,
 })
 
 export default Page

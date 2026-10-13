@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { Envelope } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -419,6 +420,8 @@ const Row = ({
 
 export const config = defineRouteConfig({
   label: "Contact Leads",
+  icon: Envelope,
+  rank: 15,
 })
 
 export default Page

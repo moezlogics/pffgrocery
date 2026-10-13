@@ -388,6 +388,7 @@ const Page = () => {
 export const config = defineRouteConfig({
   label: "Group Broadcast",
   icon: EnvelopeSolid,
+  rank: 18,
 })
 
 export default Page

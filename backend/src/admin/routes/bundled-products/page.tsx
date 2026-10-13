@@ -116,6 +116,7 @@ const BundledProductsPage = () => {
 export const config = defineRouteConfig({
   label: "Bundled Products",
   icon: CubeSolid,
+  rank: 6,
 })
 
 export default BundledProductsPage

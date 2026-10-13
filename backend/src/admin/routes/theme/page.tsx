@@ -935,6 +935,7 @@ const Page = () => {
 export const config = defineRouteConfig({
   label: "Theme & Appearance",
   icon: SwatchSolid,
+  rank: 14,
 })
 
 export default Page

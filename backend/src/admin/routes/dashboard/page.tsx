@@ -592,4 +592,5 @@ export default function DashboardPage() {
 export const config = defineRouteConfig({
   label: "Dashboard",
   icon: ChartPie,
+  rank: 1,
 })

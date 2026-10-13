@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { Folder } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -222,6 +223,8 @@ const CategoriesPage = () => {
 
 export const config = defineRouteConfig({
   label: "Blog Categories",
+  icon: Folder,
+  rank: 11,
 })
 
 export default CategoriesPage

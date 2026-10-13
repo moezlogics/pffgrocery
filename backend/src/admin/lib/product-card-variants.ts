@@ -139,6 +139,13 @@ export const PRODUCT_CARD_VARIANTS: ProductCardVariantMeta[] = [
     description:
       "Shopify-style high-density grid card with clean typography, pack details, and inline discount pill.",
   },
+  {
+    key: "footflare",
+    label: "FootFlare",
+    tag: "Mobile App · Fashion",
+    description:
+      "FootFlare PWA-template tile: rounded image with a rotated left-edge OFF ribbon, bookmark heart, title + price with a circular arrow CTA.",
+  },
 ]
 
 export const DEFAULT_PRODUCT_CARD_VARIANT = "minimal"

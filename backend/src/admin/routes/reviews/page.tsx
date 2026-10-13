@@ -11,9 +11,10 @@ import {
 } from "@medusajs/ui"
 import { ChatBubbleLeftRight, CheckCircle, XCircle, CheckCircleSolid } from "@medusajs/icons"
 
-export const routeConfig = defineRouteConfig({
+export const config = defineRouteConfig({
   label: "Reviews",
   icon: ChatBubbleLeftRight,
+  rank: 9,
 })
 
 type Review = {

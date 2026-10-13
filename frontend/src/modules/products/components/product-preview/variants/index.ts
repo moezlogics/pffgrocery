@@ -15,6 +15,7 @@ import ShopUsCard from "./shopus"
 import PixioCard from "./pixio"
 import ShopifyBoldCard from "./shopify-bold"
 import ShopifyGridCard from "./shopify-grid"
+import FootFlareCard from "./footflare"
 import type { ProductCardProps, ProductCardVariantMeta } from "./types"
 
 export type { ProductCardProps, ProductCardVariantMeta } from "./types"
@@ -202,6 +203,16 @@ export const PRODUCT_CARD_VARIANTS: Record<
     },
     Component: ShopifyGridCard,
   },
+  footflare: {
+    meta: {
+      key: "footflare",
+      label: "FootFlare",
+      tag: "Mobile App · Fashion",
+      description:
+        "FootFlare PWA-template tile: rounded image with a rotated left-edge OFF ribbon, bookmark heart, title + price with a circular arrow CTA.",
+    },
+    Component: FootFlareCard,
+  },
 }
 
 export const PRODUCT_CARD_VARIANT_LIST: ProductCardVariantMeta[] = Object.values(
@@ -210,7 +221,32 @@ export const PRODUCT_CARD_VARIANT_LIST: ProductCardVariantMeta[] = Object.values
 
 export const DEFAULT_PRODUCT_CARD_VARIANT = "minimal"
 
+/**
+ * Per-deployment default (env, optional) — lets a store boot with its
+ * intended card design BEFORE anyone touches the admin setting (e.g.
+ * itwarbazar ships FootFlare out of the box). The admin-selected
+ * `product_card_variant` site-setting still wins once it's set.
+ */
+const ENV_DEFAULT =
+  process.env.NEXT_PUBLIC_DEFAULT_PRODUCT_CARD_VARIANT || ""
+
+/**
+ * Hard force (env, optional) — beats even the admin setting. Meant for
+ * LOCAL design previews via .env.local (e.g. eyeballing a new card
+ * against another store's borrowed catalog). Never set this in a
+ * deployed .env.
+ */
+const ENV_FORCE =
+  process.env.NEXT_PUBLIC_FORCE_PRODUCT_CARD_VARIANT || ""
+
+function fallbackVariant(): string {
+  return PRODUCT_CARD_VARIANTS[ENV_DEFAULT]
+    ? ENV_DEFAULT
+    : DEFAULT_PRODUCT_CARD_VARIANT
+}
+
 export function resolveProductCardVariant(key?: string | null): string {
-  if (!key) return DEFAULT_PRODUCT_CARD_VARIANT
-  return PRODUCT_CARD_VARIANTS[key] ? key : DEFAULT_PRODUCT_CARD_VARIANT
+  if (PRODUCT_CARD_VARIANTS[ENV_FORCE]) return ENV_FORCE
+  if (!key) return fallbackVariant()
+  return PRODUCT_CARD_VARIANTS[key] ? key : fallbackVariant()
 }

@@ -1,4 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
+import { BellAlert } from "@medusajs/icons"
 import {
   Container,
   Heading,
@@ -557,6 +558,8 @@ function genderBadgeColor(raw: string): "blue" | "purple" | "green" | "grey" {
 
 export const config = defineRouteConfig({
   label: "Web Push",
+  icon: BellAlert,
+  rank: 16,
 })
 
 export default Page
