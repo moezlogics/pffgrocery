@@ -28,7 +28,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 // force-dynamic opt-in. Enabling ISR here requires first moving auth to
 // the client (a separate, careful refactor). Instant-nav feel comes from
 // loading.tsx (instant skeleton) + CF caching + staleTimes instead.
-export const revalidate = 300
+export const dynamic = "force-dynamic"
 type Props = {
   params: Promise<{ slug: string[]; countryCode: string }>
   searchParams: Promise<{

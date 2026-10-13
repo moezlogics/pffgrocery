@@ -114,10 +114,14 @@ export const getCacheOptions = async (
 
   const tags: string[] = []
 
+  const isGlobal =
+    GLOBAL_REVALIDATE_TAGS.has(tag) ||
+    GLOBAL_REVALIDATE_TAGS.has(tag.split("-")[0])
+
   // Only call getCacheTag (which reads cookies) for private / user-specific tags.
   // For global public data sets, avoid reading cookies entirely to prevent opting
   // the page / fetch into dynamic request-time rendering during builds.
-  if (GLOBAL_REVALIDATE_TAGS.has(tag)) {
+  if (isGlobal) {
     tags.push(tag)
   } else {
     const cacheTag = await getCacheTag(tag)
@@ -135,7 +139,7 @@ export const getCacheOptions = async (
   // Time-based safety net for public data. Triggers a background
   // re-fetch when the cache entry is older than the configured
   // window, regardless of whether the event subscriber fired.
-  if (GLOBAL_REVALIDATE_TAGS.has(tag)) {
+  if (isGlobal) {
     opts.revalidate = GLOBAL_REVALIDATE_SECONDS
   }
 

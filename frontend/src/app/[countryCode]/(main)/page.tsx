@@ -13,20 +13,7 @@ import CategoryCarouselServer from "@modules/home/components/category-carousel/s
 import { listBrands } from "@lib/data/brands"
 import { BrandsRailLayout } from "@modules/store/components/mobile-brands-sidebar"
 
-/**
- * ISR — the homepage was the ONLY high-traffic route still rendering
- * on every request (ƒ in the build output) while product pages were
- * already cached (●). Every data source here is force-cache/revalidate
- * (banners 60s, settings, brands, products), so the page itself can be
- * served from the full-route cache and re-rendered in the background.
- * Same proven pattern as [...slug]: revalidate + empty static params.
- */
-export const revalidate = 300
-export async function generateStaticParams() {
-  // Empty on purpose — the backend may be offline at build time. Each
-  // countryCode renders once on first hit, then serves from cache.
-  return []
-}
+export const dynamic = "force-dynamic"
 
 
 /**

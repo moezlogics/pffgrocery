@@ -16,7 +16,7 @@ import BreadcrumbJsonLd from "@modules/common/components/breadcrumb-jsonld"
  * collection page 500s in production. See products/[handle]/page.tsx
  * for the longer explanation.
  */
-export const revalidate = 300
+export const dynamic = "force-dynamic"
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
