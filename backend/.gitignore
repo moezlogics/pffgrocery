@@ -1,0 +1,44 @@
+# Medusa backend
+
+# dependencies
+node_modules/
+
+# build output
+dist/
+.medusa/
+.cache/
+admin-static/
+
+# env — real values are secrets; .env.template IS committed so a new
+# deployment knows which variables to set. The bare `.env*` rule used to
+# swallow the template too, so it could never be committed.
+.env*
+!.env.template
+!.env.example
+
+# uploaded media (user content)
+uploads/
+
+# database dumps. NOT a blanket *.sql — admin-push-table.sql and
+# performance-indexes.sql are documented scripts meant to be committed
+# and run against the server DB by hand.
+medusa-db.sql
+*.dump
+*.sql.gz
+*-dump.sql
+
+# logs
+*.log
+logs/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/

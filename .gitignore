@@ -1,0 +1,82 @@
+# ─────────────────────────────────────────────────────────────────────
+# Repo-wide safety net.
+#
+# Each part of the stack (frontend / backend / app / cdn) also has its
+# own .gitignore with rules specific to its build tool. This file only
+# catches things that are generated anywhere in the tree, so a new
+# folder is never accidentally committed with its build output.
+#
+# NOTE on env files: the real .env files are ignored, but the committed
+# *templates* are explicitly allowed back in — they document which
+# variables a deployment needs and are meant to be in the repo.
+# ─────────────────────────────────────────────────────────────────────
+
+# Node dependencies
+node_modules/
+
+# Environment files — secrets. Templates are whitelisted below.
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
+
+# Build / output directories
+dist/
+build/
+out/
+.next/
+.medusa/
+.cache/
+.turbo/
+.vite/
+admin-static/
+
+# Test / coverage output
+coverage/
+.nyc_output/
+
+# Uploaded media — user content, never source
+uploads/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Archives — these are big and are never source
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Database dumps only — NOT hand-written .sql scripts. A blanket *.sql
+# rule would hide operational scripts that are meant to be committed
+# and run on the server (backend/admin-push-table.sql,
+# backend/performance-indexes.sql), so match dump shapes instead.
+*.dump
+*.sql.gz
+*-dump.sql
+*_dump.sql
+dump*.sql
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

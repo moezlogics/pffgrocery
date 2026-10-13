@@ -1,0 +1,52 @@
+# Next.js storefront
+
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js build output
+.next/
+out/
+build/
+dist/
+.turbo/
+.vercel/
+
+# env — real values are secrets. Templates stay committed so a new
+# deployment knows which variables to set.
+.env
+.env.*
+!.env.example
+!.env.template
+
+# test / coverage output
+coverage/
+
+# logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# bundle analyzer output
+.next/analyze/
+analyze/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.sw?
+
+# NOTE: next-env.d.ts is intentionally NOT ignored — Next.js regenerates
+# it but it is meant to be committed so type-checking works on a fresh
+# clone before the first `next dev`/`next build`.

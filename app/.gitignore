@@ -1,0 +1,37 @@
+# Admin app (Vite + React)
+
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+.vite/
+
+# env — real values are secrets; .env.example IS committed as the
+# reference for which variables this app needs. The bare `.env*` rule
+# used to swallow the example too, so it could never be committed.
+.env*
+!.env.example
+!.env.template
+
+# test / coverage output
+coverage/
+
+# logs
+*.log
+logs/
+npm-debug.log*
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.sw?

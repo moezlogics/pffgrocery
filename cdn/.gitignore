@@ -1,0 +1,37 @@
+# CDN / media service
+
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# env — real values are secrets; templates stay committed
+.env*
+!.env.example
+!.env.template
+
+# uploaded + derived media — user content and generated thumbnails,
+# this is the service's data directory, never source
+uploads/
+cache/
+
+# archives
+*.zip
+*.tar.gz
+
+# logs
+*.log
+logs/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/

@@ -1,0 +1,10 @@
+# PFF Grocer Storefront
+
+> The premier online grocery destination for fresh produce, pantry essentials, and household items.
+
+## Navigation
+
+- [Home](/) - The homepage with featured category rails, popular brands, and current promotional campaigns.
+- [Store](/store) - Browse all grocery and organic products. Supports filtering by brand, category, price range, and product specifications.
+- [Brands](/brands) - View all trusted manufacturers and brands.
+- [Blog](/blog) - Read the latest reviews, comparisons, and cooking articles.
