@@ -1,5 +1,4 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { BookOpen } from "@medusajs/icons"
 import { Container, Heading, Button, Table, Badge, Input } from "@medusajs/ui"
 import { useEffect, useState } from "react"
 import { blogApi } from "../../lib/sdk"
@@ -123,9 +122,7 @@ const Page = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Blog Posts",
-  icon: BookOpen,
-  rank: 10,
+  label: "Blog",
 })
 
 export default Page

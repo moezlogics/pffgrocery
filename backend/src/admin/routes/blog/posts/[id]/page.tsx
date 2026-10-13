@@ -15,6 +15,26 @@ import RichEditor from "../../../../components/RichEditor"
 
 type Category = { id: string; name: string; handle: string }
 
+/**
+ * Pull something human out of a failed admin request.
+ *
+ * The Medusa SDK surfaces non-2xx responses as a generic
+ * "An unknown error occurred", which hides the reason the server actually
+ * gave. The API routes return `{ error, message, detail }`, so check those
+ * first and only fall back to the SDK's own text.
+ */
+function describeError(e: any): string {
+  const body = e?.response?.data ?? e?.body ?? e?.data
+  const parts = [body?.message, body?.detail, body?.error].filter(Boolean)
+  if (parts.length) return parts.join(" — ")
+  if (e?.message && e.message !== "An unknown error occurred") return e.message
+  try {
+    return JSON.stringify(body ?? e)
+  } catch {
+    return String(e)
+  }
+}
+
 const EditPostPage = () => {
   const { id } = useParams<{ id: string }>()
   const [loading, setLoading] = useState(true)
@@ -30,6 +50,8 @@ const EditPostPage = () => {
   const [seoKeywords, setSeoKeywords] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+  const [authors, setAuthors] = useState<any[]>([])
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string>("")
   const [saving, setSaving] = useState(false)
   const [imageUploading, setImageUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -37,10 +59,14 @@ const EditPostPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [postData, catData] = await Promise.all([
+        // The admin SDK's fetch is generically typed, so the awaited
+        // tuple comes back as `unknown` — cast once here rather than at
+        // every property access below.
+        const [postData, catData, authorData] = (await Promise.all([
           blogApi.getPost(id!),
           blogApi.listCategories(),
-        ])
+          blogApi.listAuthors(),
+        ])) as any[]
 
         const p = postData.post
         setTitle(p.title || "")
@@ -57,6 +83,8 @@ const EditPostPage = () => {
           (p.categories || []).map((c: Category) => c.id)
         )
         setCategories(catData.categories || [])
+        setAuthors(authorData.authors || [])
+        setSelectedAuthorId(p.author_id || p.author?.id || "")
       } catch (e) {
         alert("Failed to load post: " + (e as Error).message)
       } finally {
@@ -113,10 +141,11 @@ const EditPostPage = () => {
         seo_description: seoDescription || null,
         seo_keywords: seoKeywords || null,
         category_ids: selectedCategoryIds,
+        author_id: selectedAuthorId || null,
       })
       window.location.href = "/app/blog"
     } catch (e) {
-      alert("Failed to save: " + (e as Error).message)
+      alert("Failed to save: " + describeError(e))
     } finally {
       setSaving(false)
     }
@@ -332,6 +361,40 @@ const EditPostPage = () => {
                   </Badge>
                 ))}
               </div>
+            )}
+          </Container>
+
+          {/* Author */}
+          <Container className="p-4 mb-4">
+            <Label className="mb-2 block">Author</Label>
+            {authors.length === 0 ? (
+              <p style={{ color: "#9ca3af", fontSize: 13 }}>
+                No authors yet.{" "}
+                <a href="/app/blog/authors" style={{ color: "#2563eb" }}>
+                  Create one
+                </a>
+              </p>
+            ) : (
+              <select
+                value={selectedAuthorId}
+                onChange={(e: any) => setSelectedAuthorId(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-base, #e5e7eb)",
+                  background: "transparent",
+                  fontSize: 14,
+                }}
+              >
+                <option value="">— No author —</option>
+                {authors.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                    {a.role ? ` · ${a.role}` : ""}
+                  </option>
+                ))}
+              </select>
             )}
           </Container>
 
