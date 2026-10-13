@@ -18,7 +18,6 @@ import QuantityStepper from "../quantity-stepper"
 
 import WhatsAppOrderButton from "@modules/common/components/whatsapp-button"
 import SizeChart from "@modules/products/components/size-chart"
-import ProductTrustBadges from "@modules/products/components/product-trust-badges"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { getPreorderState } from "@lib/util/preorder"
 import CompareButton from "@modules/products/components/compare/compare-button"
@@ -616,8 +615,6 @@ export default function ProductActions({
         />
       )}
 
-      {/* Trust / policy tiles — below ATC */}
-      <ProductTrustBadges />
       </>
       )}
 
